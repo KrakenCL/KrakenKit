@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "SwiftProtobuf",
+        "repositoryURL": "https://github.com/apple/swift-protobuf.git",
+        "state": {
+          "branch": null,
+          "revision": "ab98c52b5166593ad1ae0df246463266df151cfa",
+          "version": "1.3.1"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
