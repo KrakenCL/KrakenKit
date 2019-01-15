@@ -16,6 +16,49 @@
  */
 
 import Foundation
+import Darwin
+
+extension Array where Element: Comparable {
+    func upperBound(value: Element) -> Index {
+        var low = startIndex
+        var high = endIndex
+        var middleIndex = Int(high / 2)
+        
+        while low <= high {            
+        }
+        return self.endIndex
+    }
+}
+//BinaryFloatingPoint
+//FloatingPoint
+internal class Histogram<T: BinaryFloatingPoint> {
+    var bucketLimits: [T]
+    init() {
+        
+        bucketLimits = Histogram.defaultBuckets
+    }
+    
+    static var defaultBuckets: [T] {
+        var buckets = [T]()
+        var negativeBuckets = [T]()
+
+        var v: T = 1.0e-12
+        while v < 1.0e20 {
+            buckets.append(v)
+            negativeBuckets.append(-v)
+            v *= 1.1
+        }
+        buckets.append(T.greatestFiniteMagnitude)
+        negativeBuckets.append(-T.greatestFiniteMagnitude)
+        return negativeBuckets.reversed() + [0.0] + buckets
+    }
+
+    func add(value: T) {
+        
+        
+    }
+}
+
 
 // Origin:
 // https://github.com/google/leveldb/blob/master/util/histogram.cc
@@ -44,9 +87,7 @@ static std::vector<double>* InitDefaultBucketsInner() {
 */
 /*
 void Histogram::Add(double value) {
-    int b =
-    std::upper_bound(bucket_limits_.begin(), bucket_limits_.end(), value) -
-    bucket_limits_.begin();
+    int b = std::upper_bound(bucket_limits_.begin(), bucket_limits_.end(), value) - bucket_limits_.begin();
     
     buckets_[b] += 1.0;
     if (min_ > value) min_ = value;
