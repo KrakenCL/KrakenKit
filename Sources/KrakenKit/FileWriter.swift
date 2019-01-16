@@ -49,9 +49,7 @@ public class FileWriter {
         let eventRecord = EventRecord.fileEvent()
         let fileEventRecord = try eventRecord.record()
         records.append(fileEventRecord)
-        
-        let session: String = identifier ?? "Event"
-        guard let computedFileURL = URL(string: "events.out.tfevents.\(Date().timeIntervalSince1970).\(session)", relativeTo: url) else {
+        guard let computedFileURL = URL(string: "events.out.tfevents.\(Date().timeIntervalSince1970).td", relativeTo: url) else {
             throw FileWriterError.canNotComputeFileURL
         }
         
@@ -112,47 +110,10 @@ public class FileWriter {
         }
     }
     
-    /// Add Serialized GraphDef to events list to store it on file system
-    internal func add(graphDef data: Data) throws {
+    public func add(summary: Summary) throws {
         var eventRecord = EventRecord(defaultKind: .value)
-        eventRecord.event.summary = Tensorflow_Summary()
-        eventRecord.event.graphDef = data
+        eventRecord.event.summary = summary.proto
         let record = try eventRecord.record()
-        dataQueue.sync(flags: .barrier) {
-            records.append(record)
-        }
-    }
-	
-	/// One more feature to track some
-	public func add(scalar: Float, tag: String, step: Int64, time: TimeInterval = Date().timeIntervalSince1970) throws {
-		var summary = Tensorflow_Summary()
-		var summaryValue = Tensorflow_Summary.Value()
-		summaryValue.simpleValue = scalar
-		summaryValue.tag = tag
-		summary.value.append(summaryValue)
-		
-		var eventRecord = EventRecord(defaultKind: .value)
-		eventRecord.event.wallTime = time
-		eventRecord.event.summary = summary
-		eventRecord.event.step = step
-		let record = try eventRecord.record()
-		
-		dataQueue.sync(flags: .barrier) {
-			records.append(record)
-		}
-		try flush()
-	}
-	
-    /// Add summary as serialized proto buffer stored in `Tensor`.
-    public func add(serializedTensor data: Data, step: Int64, time: TimeInterval = Date().timeIntervalSince1970) throws {
-        let summary = try Tensorflow_Summary(serializedData: data)
-        
-        var eventRecord = EventRecord(defaultKind: .value)
-        eventRecord.event.wallTime = time
-        eventRecord.event.summary = summary
-        eventRecord.event.step = step
-        let record = try eventRecord.record()
-        
         dataQueue.sync(flags: .barrier) {
             records.append(record)
         }

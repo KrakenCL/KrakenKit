@@ -15,18 +15,12 @@
  limitations under the License.
  */
 
-import TensorFlow
+//import TensorFlow
+
+import Proto
+import Foundation
 
 public struct KrakenKit {
     var version = "0.0.1"
     public init() {}
-    public func test() {
-        
-        let tensor = Tensor<Float>.init([-10, 0, 0.5, 1.0, 2.0, 5, 70, 100])
-        print(tensor.scalars.upperBound(value: 2.2))
-        let histo = Histogram<Float>()
-        
-        
-        
-    }
 }

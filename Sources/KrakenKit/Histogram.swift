@@ -16,184 +16,115 @@
  */
 
 import Foundation
-import Darwin
+import Proto
 
+/// Returns an iterator pointing to the first element in the range [first, last) that is greater than value, or last if no such element is found.
 extension Array where Element: Comparable {
-    func upperBound(value: Element) -> Index {
-        var low = startIndex
-        var high = endIndex
-        var middleIndex = Int(high / 2)
+    public func upperBound(value: Element) -> Index {
+        var lowIndex = startIndex
+        var highIndex = endIndex - 1
+        var middleIndex = lowIndex + (highIndex - lowIndex) / 2
         
-        while low <= high {            
+        while lowIndex <= highIndex {
+            let middleValue = self[middleIndex]
+
+            if value >= middleValue  {
+                lowIndex = middleIndex
+                middleIndex = lowIndex + (highIndex - lowIndex) / 2
+                if middleIndex == lowIndex {
+                    return highIndex
+                }
+                continue
+            } else { //clear
+                highIndex = middleIndex
+                middleIndex = lowIndex + (highIndex - lowIndex) / 2
+                if highIndex == middleIndex {
+                    return highIndex
+                }
+                continue
+            }
         }
-        return self.endIndex
+        return highIndex
     }
 }
-//BinaryFloatingPoint
-//FloatingPoint
-internal class Histogram<T: BinaryFloatingPoint> {
-    var bucketLimits: [T]
-    init() {
-        
-        bucketLimits = Histogram.defaultBuckets
+
+internal class Histogram {
+    
+    var bucketLimit: [Double]
+    var bucket: [Int]
+    var min: Double = 0.0
+    var max: Double = 0.0
+    var count: Int = 0
+    var sum: Double = 0.0
+    var sumOfSquares: Double = 0.0
+    
+    init(ofSequence sequence: [Double]) {
+        bucketLimit = Histogram.defaultBuckets
+        bucket = Array<Int>(repeating: 0, count: bucketLimit.count)
+        for element in sequence {
+            add(value: element)
+        }
     }
     
-    static var defaultBuckets: [T] {
-        var buckets = [T]()
-        var negativeBuckets = [T]()
+    fileprivate static var defaultBuckets: [Double] {
+        var buckets = [Double]()
+        var negativeBuckets = [Double]()
 
-        var v: T = 1.0e-12
-        while v < 1.0e20 {
-            buckets.append(v)
-            negativeBuckets.append(-v)
-            v *= 1.1
+        var norm: Double = Double.leastNormalMagnitude
+        while norm < Double.greatestFiniteMagnitude {
+            buckets.append(norm)
+            negativeBuckets.append(-norm)
+            norm *= 1.1
         }
-        buckets.append(T.greatestFiniteMagnitude)
-        negativeBuckets.append(-T.greatestFiniteMagnitude)
         return negativeBuckets.reversed() + [0.0] + buckets
     }
-
-    func add(value: T) {
-        
-        
-    }
-}
-
-
-// Origin:
-// https://github.com/google/leveldb/blob/master/util/histogram.cc
-// New way:
-// https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/lib/histogram/histogram.cc
-/*
-static std::vector<double>* InitDefaultBucketsInner() {
-    std::vector<double> buckets;
-    std::vector<double> neg_buckets;
-    // Make buckets whose range grows by 10% starting at 1.0e-12 up to 1.0e20
-    double v = 1.0e-12;
-    while (v < 1.0e20) {
-        buckets.push_back(v);
-        neg_buckets.push_back(-v);
-        v *= 1.1;
-    }
-    buckets.push_back(DBL_MAX);
-    neg_buckets.push_back(-DBL_MAX);
-    std::reverse(neg_buckets.begin(), neg_buckets.end());
-    std::vector<double>* result = new std::vector<double>;
-    result->insert(result->end(), neg_buckets.begin(), neg_buckets.end());
-    result->push_back(0.0);
-    result->insert(result->end(), buckets.begin(), buckets.end());
-    return result;
-}
-*/
-/*
-void Histogram::Add(double value) {
-    int b = std::upper_bound(bucket_limits_.begin(), bucket_limits_.end(), value) - bucket_limits_.begin();
     
-    buckets_[b] += 1.0;
-    if (min_ > value) min_ = value;
-    if (max_ < value) max_ = value;
-    num_++;
-    sum_ += value;
-    sum_squares_ += (value * value);
-}
-*/
-/*
-double Histogram::Median() const { return Percentile(50.0); }
-*/
-/*
-// Linearly map the variable x from [x0, x1] unto [y0, y1]
-double Histogram::Remap(double x, double x0, double x1, double y0,
-double y1) const {
-    return y0 + (x - x0) / (x1 - x0) * (y1 - y0);
-}
-*/
-/*
-// Pick tight left-hand-side and right-hand-side bounds and then
-// interpolate a histogram value at percentile p
-double Histogram::Percentile(double p) const {
-    if (num_ == 0.0) return 0.0;
-    
-    double threshold = num_ * (p / 100.0);
-    double cumsum_prev = 0;
-    for (size_t i = 0; i < buckets_.size(); i++) {
-        double cumsum = cumsum_prev + buckets_[i];
+    fileprivate func add(value: Double) {
+        let bucketIndex = bucketLimit.upperBound(value: value)
+        bucket[bucketIndex] = bucket[bucketIndex] + 1
         
-        // Find the first bucket whose cumsum >= threshold
-        if (cumsum >= threshold) {
-            // Prevent divide by 0 in remap which happens if cumsum == cumsum_prev
-            // This should only get hit when p == 0, cumsum == 0, and cumsum_prev == 0
-            if (cumsum == cumsum_prev) {
-                continue;
+        if min > value { min = value }
+        if max < value { max = value }
+        
+        count += 1
+        sum += value
+        sumOfSquares += (value * value)
+    }
+    
+    /// Find run of empty buckets and collapse them into one
+    fileprivate func scour() {
+        var index = 0
+        var scouredBucket = [Int]()
+        var scouredBucketLimits = [Double]()
+        while index < bucket.count {
+            var end = bucketLimit[index]
+            var count = bucket[index]
+            index += 1
+            if count == 0 {
+                while index < bucket.count && bucket[index] == 0 {
+                    end = bucketLimit[index]
+                    count = bucket[index]
+                    index += 1
+                }
             }
-            
-            // Calculate the lower bound of interpolation
-            double lhs = (i == 0 || cumsum_prev == 0) ? min_ : bucket_limits_[i - 1];
-            lhs = std::max(lhs, min_);
-            
-            // Calculate the upper bound of interpolation
-            double rhs = bucket_limits_[i];
-            rhs = std::min(rhs, max_);
-            
-            double weight = Remap(threshold, cumsum_prev, cumsum, lhs, rhs);
-            return weight;
+            scouredBucket.append(count)
+            scouredBucketLimits.append(end)
         }
-        
-        cumsum_prev = cumsum;
+        bucket = scouredBucket
+        bucketLimit = scouredBucketLimits
     }
-    return max_;
+    
+    lazy var proto: Tensorflow_HistogramProto = {
+        // Find run of empty buckets and collapse them into one
+        scour()
+        var histogramProto = Tensorflow_HistogramProto()
+        histogramProto.bucket = bucket.map { Double($0) }
+        histogramProto.bucketLimit = bucketLimit
+        histogramProto.max = max
+        histogramProto.min = min
+        histogramProto.num = Double(count)
+        histogramProto.sum = sum
+        histogramProto.sumSquares = sumOfSquares
+        return histogramProto
+    }()
 }
-*/
-/*
-double Histogram::Average() const {
-    if (num_ == 0.0) return 0;
-    return sum_ / num_;
-}
-*/
-/*
-double Histogram::StandardDeviation() const {
-    if (num_ == 0.0) return 0;
-    double variance = (sum_squares_ * num_ - sum_ * sum_) / (num_ * num_);
-    return sqrt(variance);
-}
-*/
-// Returns a multi-line human-readable string representing the histogram
-// contents.  Example output:
-//   Count: 4  Average: 251.7475  StdDev: 432.02
-//   Min: -3.0000  Median: 5.0000  Max: 1000.0000
-//   ------------------------------------------------------
-//   [      -5,       0 )       1  25.000%  25.000% #####
-//   [       0,       5 )       1  25.000%  50.000% #####
-//   [       5,      10 )       1  25.000%  75.000% #####
-//   [    1000,   10000 )       1  25.000% 100.000% #####
-/*
-std::string Histogram::ToString() const {
-    std::string r;
-    char buf[200];
-    snprintf(buf, sizeof(buf), "Count: %.0f  Average: %.4f  StdDev: %.2f\n", num_,
-    Average(), StandardDeviation());
-    r.append(buf);
-    snprintf(buf, sizeof(buf), "Min: %.4f  Median: %.4f  Max: %.4f\n",
-    (num_ == 0.0 ? 0.0 : min_), Median(), max_);
-    r.append(buf);
-    r.append("------------------------------------------------------\n");
-    const double mult = num_ > 0 ? 100.0 / num_ : 0.0;
-    double sum = 0;
-    for (size_t b = 0; b < buckets_.size(); b++) {
-        if (buckets_[b] <= 0.0) continue;
-        sum += buckets_[b];
-        snprintf(buf, sizeof(buf), "[ %10.2g, %10.2g ) %7.0f %7.3f%% %7.3f%% ",
-        ((b == 0) ? -DBL_MAX : bucket_limits_[b - 1]),  // left
-        bucket_limits_[b],                              // right
-        buckets_[b],                                    // count
-        mult * buckets_[b],                             // percentage
-        mult * sum);                                    // cum percentage
-        r.append(buf);
-        
-        // Add hash marks based on percentage; 20 marks for 100%.
-        int marks = static_cast<int>(20 * (buckets_[b] / num_) + 0.5);
-        r.append(marks, '#');
-        r.push_back('\n');
-    }
-    return r;
-}
-*/
