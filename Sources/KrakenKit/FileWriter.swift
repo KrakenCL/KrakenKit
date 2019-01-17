@@ -33,30 +33,27 @@ public class FileWriter {
     public private(set) var fileURL: URL?
     /// Path to storage folder.
     public private(set) var folderURL: URL?
-    public private(set) var identifier: String?
+    public private(set) var identifier: String
     /// Writing queue.
     fileprivate let dataQueue = DispatchQueue(label: "com.krakencl.krakenkit", qos: .default)
     
     /// Constructor, should receive url path to storage folder
     /// Also you can set some identifier for your file.
-    public init(folder url: URL, identifier : String? = "") throws {
+    public init(folder url: URL, identifier: String = "") throws {
+        self.identifier = identifier
+
         try prepareFile(folder: url, identifier: identifier)
         try flush()
     }
     
-    internal func prepareFile(folder url: URL, identifier : String? = "") throws {
-        self.identifier = identifier
+    internal func prepareFile(folder url: URL, identifier : String) throws {
         let eventRecord = EventRecord.fileEvent()
         let fileEventRecord = try eventRecord.record()
         records.append(fileEventRecord)
-        guard let computedFileURL = URL(string: "events.out.tfevents.\(Date().timeIntervalSince1970).td", relativeTo: url) else {
+        folderURL = url.appendingPathComponent("/")
+
+        guard let computedFileURL = URL(string: "events.out.tfevents.\(Date().timeIntervalSince1970)-\(identifier).td", relativeTo: folderURL) else {
             throw FileWriterError.canNotComputeFileURL
-        }
-        
-        if url.scheme == nil {
-            folderURL = URL(string: "file://" + url.absoluteString)!
-        } else {
-            folderURL = url
         }
         
         fileURL = computedFileURL
@@ -64,7 +61,7 @@ public class FileWriter {
     
     /// Checking is folder available.
     internal func folderPreparation() throws {
-        guard let folderURL = folderURL else { throw FileWriterError.canNotComputeFileURL }
+        guard var folderURL = folderURL else { throw FileWriterError.canNotComputeFileURL }
         var isDirectory : ObjCBool = false
         if FileManager.default.fileExists(atPath: folderURL.absoluteString, isDirectory: &isDirectory) {
             #if os(Linux)
@@ -77,7 +74,11 @@ public class FileWriter {
                 }
             #endif
         }
-        
+
+        if folderURL.scheme == nil {
+            folderURL = URL(string: "file://" + folderURL.absoluteString)!
+        }
+
         try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true, attributes: nil)
     }
     
@@ -109,10 +110,18 @@ public class FileWriter {
             fileHandle.closeFile()
         }
     }
+
+    /// Add `Summary` to FileWriter and clear `Summary` contant.
+    public func add(summary: Summary, wallTime: TimeInterval = Date().timeIntervalSince1970, step: Int) throws {
+        try add(summary: summary, wallTime: wallTime, step: Int64(step))
+    }
     
-    public func add(summary: Summary) throws {
+    /// Add `Summary` to FileWriter and clear `Summary` contant.
+    public func add(summary: Summary, wallTime: TimeInterval = Date().timeIntervalSince1970, step: Int64) throws {
         var eventRecord = EventRecord(defaultKind: .value)
         eventRecord.event.summary = summary.proto
+        eventRecord.event.wallTime = wallTime
+        eventRecord.event.step = step
         let record = try eventRecord.record()
         dataQueue.sync(flags: .barrier) {
             records.append(record)

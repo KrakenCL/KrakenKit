@@ -15,12 +15,17 @@
  limitations under the License.
  */
 
-//import TensorFlow
-
+import TensorFlow
 import Proto
 import Foundation
 
 public struct KrakenKit {
     var version = "0.0.1"
-    public init() {}
+    public init() {
+        
+       
+        
+    }
+    
+    
 }

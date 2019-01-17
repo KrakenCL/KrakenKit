@@ -17,6 +17,10 @@
 
 import Foundation
 import Proto
+import TensorFlow
+import CTensorFlow
+
+public protocol TensorBoardRepresentable: TensorFlowScalar {}
 
 public class Summary {
     private var values = [Tensorflow_Summary.Value]()
@@ -27,9 +31,7 @@ public class Summary {
     }
     
     /*
-     simpleValue(Float)
      image(Tensorflow_Summary.Image)
-     histo(Tensorflow_HistogramProto)
      audio(Tensorflow_Summary.Audio)
      tensor(Tensorflow_TensorProto)
      */
@@ -46,16 +48,68 @@ public class Summary {
         }
     }
     
-    public func histogram(array: [Float], tag: String) {
-        let histo = Histogram(ofSequence: array.map { Double($0) } )
+    public func histogram(array: [Double], tag: String) {
+        let histo = Histogram(ofSequence: array)
         var value = valueTemplate
         value.histo = histo.proto
         add(value, tag: tag)
     }
     
+    
+    /// Just add histogram
+//    public func histogram(tensor: Tensor<Double>, tag: String) {
+//        histogram(array: tensor.scalars, tag: tag)
+//    }
+    
+    /// Convert any `BinaryFloatingPoint` Scalar value to Double and pass to histogram
+    public func histogram<Scalar: BinaryFloatingPoint>(tensor: Tensor<Scalar>, tag: String) {
+        histogram(array: tensor.scalars.map { Double($0) }, tag: tag)
+    }
+    
+    /// Convert any `BinaryInteger` Scalar value to Double and pass to histogram
+    public func histogram<Scalar: BinaryInteger>(tensor: Tensor<Scalar>, tag: String) {
+        histogram(array: tensor.scalars.map { Double($0) }, tag: tag)
+    }
+
     public func image(array: [Float], tag: String) {
         var value = valueTemplate
         values.append(value)
+    }
+    
+    public func add<T : Numeric>(scalar: T, tag: String) {
+        var value = valueTemplate
+        value.tag = tag
+        
+        if let scalar = scalar as? Double {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? Float {
+            value.simpleValue = scalar
+        } else if let scalar = scalar as? Int {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? Int8 {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? Int16 {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? Int32 {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? UInt {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? UInt8 {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? UInt16 {
+            value.simpleValue = Float(scalar)
+        } else if let scalar = scalar as? UInt32 {
+            value.simpleValue = Float(scalar)
+        }
+        
+        add(value, tag: tag)
+    }
+    
+    public func add<Scalar>(tensor: Tensor<Scalar>, tag: String) {
+        var value = valueTemplate
+        value.tag = tag
+        value.tensor = tensor.proto
+        add(value, tag: tag)
     }
     
     /// Extract `Tensorflow_Summary` and remove all events
@@ -68,71 +122,3 @@ public class Summary {
         return tensorflowSummary
     }
 }
-
-/*
-/// Add Serialized GraphDef to events list to store it on file system
-internal func add(graphDef data: Data) throws {
-    var eventRecord = EventRecord(defaultKind: .value)
-    eventRecord.event.summary = Tensorflow_Summary()
-    eventRecord.event.graphDef = data
-    let record = try eventRecord.record()
-    dataQueue.sync(flags: .barrier) {
-        records.append(record)
-    }
-}
-
-/// One more feature to track some
-public func add(scalar: Float, tag: String, step: Int64, time: TimeInterval = Date().timeIntervalSince1970) throws {
-    var summary = Tensorflow_Summary()
-    var summaryValue = Tensorflow_Summary.Value()
-    summaryValue.simpleValue = scalar
-    summaryValue.tag = tag
-    summary.value.append(summaryValue)
-    
-    var eventRecord = EventRecord(defaultKind: .value)
-    eventRecord.event.wallTime = time
-    eventRecord.event.summary = summary
-    eventRecord.event.step = step
-    let record = try eventRecord.record()
-    
-    dataQueue.sync(flags: .barrier) {
-        records.append(record)
-    }
-    try flush()
-}
-
-public func add(histogram: Tensorflow_HistogramProto, tag: String, step: Int64, time: TimeInterval = Date().timeIntervalSince1970) throws {
-    var summary = Tensorflow_Summary()
-    var summaryValue = Tensorflow_Summary.Value()
-    summaryValue.histo = histogram
-    summaryValue.tag = tag
-    summary.value.append(summaryValue)
-    
-    var eventRecord = EventRecord(defaultKind: .value)
-    eventRecord.event.wallTime = time
-    eventRecord.event.summary = summary
-    eventRecord.event.step = step
-    let record = try eventRecord.record()
-    
-    dataQueue.sync(flags: .barrier) {
-        records.append(record)
-    }
-    try flush()
-}
-
-/// Add summary as serialized proto buffer stored in `Tensor`.
-public func add(serializedTensor data: Data, step: Int64, time: TimeInterval = Date().timeIntervalSince1970) throws {
-    let summary = try Tensorflow_Summary(serializedData: data)
-    
-    var eventRecord = EventRecord(defaultKind: .value)
-    eventRecord.event.wallTime = time
-    eventRecord.event.summary = summary
-    eventRecord.event.step = step
-    let record = try eventRecord.record()
-    
-    dataQueue.sync(flags: .barrier) {
-        records.append(record)
-    }
-    try flush()
-}
-*/
