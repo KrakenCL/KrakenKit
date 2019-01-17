@@ -108,7 +108,7 @@ public class Summary {
     public func add<Scalar>(tensor: Tensor<Scalar>, tag: String) {
         var value = valueTemplate
         value.tag = tag
-        value.tensor = tensor.proto
+        //value.tensor = tensor.proto
         add(value, tag: tag)
     }
     

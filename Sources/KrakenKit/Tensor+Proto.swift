@@ -43,35 +43,22 @@ extension Tensor {
 }
 
 
-//extension TensorShape {
-//    var proto: Tensorflow_TensorShapeProto {
-//        var tensorShape = Tensorflow_TensorShapeProto()
-//        for dimIndex in 0..<count {
-//            var dim = Tensorflow_TensorShapeProto.Dim()
-//            dim.size = Int64(self[dimIndex])
-//            tensorShape.dim.append(dim)
-//        }
-//        return tensorShape
-//    }
-//}
+extension TensorShape {
+    var proto: Tensorflow_TensorShapeProto {
+        var tensorShape = Tensorflow_TensorShapeProto()
+        for dimIndex in 0..<count {
+            var dim = Tensorflow_TensorShapeProto.Dim()
+            dim.size = Int64(self[dimIndex])
+            tensorShape.dim.append(dim)
+        }
+        return tensorShape
+    }
+}
 extension Tensor {
     var proto: Tensorflow_TensorProto {
-        var tensorProto = Tensorflow_TensorProto()
-// Currently leads to compile abort
-// Undefined symbols for architecture x86_64: ...
-// "_TFE_DeleteOp", referenced from:
-// (extension in KrakenKit):TensorFlow.Tensor.proto.getter : Proto.Tensorflow_TensorProto in Tensor+Proto.o
-//        tensorProto.tensorShape = shape.proto
-        
-        var tensorShape = Tensorflow_TensorShapeProto()
-//        let rank = shape.rank
-//        for dimIndex in 0..<rank {
-//            var dim = Tensorflow_TensorShapeProto.Dim()
-//            dim.size = Int64(shape[dimIndex])
-//            tensorShape.dim.append(dim)
-//        }
+        var tensorProto = Tensorflow_TensorProto()        
 
-        tensorProto.tensorShape = tensorShape
+        tensorProto.tensorShape = shape.proto
         tensorProto.dtype = Tensorflow_DataType(swiftType: Scalar.self)
         
         if let tensor = self as? Tensor<Double> {
