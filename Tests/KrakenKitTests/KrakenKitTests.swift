@@ -42,6 +42,7 @@ final class KrakenKitTests: XCTestCase {
             return
         }
     }
+    
     func testHistogramSummary() {
         let summary = Summary()
 
@@ -96,6 +97,56 @@ final class KrakenKitTests: XCTestCase {
             try! fileWriter.add(summary: summary, step: step)
         }
 
+        checkFileWriterStatus(fileWriter:fileWriter)
+    }
+    
+    func testTensorSummary() {
+        
+        let summary = Summary()
+        
+        guard let fileWriterURL = URL(string: "/tmp/KrakenKit/tests/") else {
+            XCTAssert(false)
+            return
+        }
+        
+        let fileWriter = try! FileWriter(folder: fileWriterURL, identifier: "summary-tensor")
+        
+        for step in 1..<3 {
+            
+            let floatTensor = Tensor<Float>(randomNormal: TensorShape([1000]))
+            let doubleTensor = Tensor<Double>(randomNormal: TensorShape([1000]))
+            let integerTensor = Tensor<Double>(randomNormal: TensorShape([1000]))
+            
+            summary.add(tensor: floatTensor, tag: "Tensor/Float")
+            summary.add(tensor: doubleTensor, tag: "Tensor/Double")
+            summary.add(tensor :integerTensor, tag: "Tensor/Integer")
+            // After that operation summary is clear
+            if step % 2 == 0 {
+                XCTAssertEqual(summary.proto.value.count, 3)
+            }
+            try! fileWriter.add(summary: summary, step: step)
+        }
+        
+        checkFileWriterStatus(fileWriter:fileWriter)
+    }
+
+    func testImageSummary() {
+        
+        let summary = Summary()
+        
+        guard let fileWriterURL = URL(string: "/tmp/KrakenKit/tests/") else {
+            XCTAssert(false)
+            return
+        }
+        
+        let fileWriter = try! FileWriter(folder: fileWriterURL, identifier: "summary-image")
+        
+        let size = Summary.ImageSize(width: 25, height: 25)
+        summary.image(array: [], colorspace: .rgba, size: size, tag: "/image/0")
+        try! fileWriter.add(summary: summary, step: 0)
+
+       
+        
         checkFileWriterStatus(fileWriter:fileWriter)
     }
     

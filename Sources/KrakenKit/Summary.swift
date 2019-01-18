@@ -55,12 +55,6 @@ public class Summary {
         add(value, tag: tag)
     }
     
-    
-    /// Just add histogram
-//    public func histogram(tensor: Tensor<Double>, tag: String) {
-//        histogram(array: tensor.scalars, tag: tag)
-//    }
-    
     /// Convert any `BinaryFloatingPoint` Scalar value to Double and pass to histogram
     public func histogram<Scalar: BinaryFloatingPoint>(tensor: Tensor<Scalar>, tag: String) {
         histogram(array: tensor.scalars.map { Double($0) }, tag: tag)
@@ -70,10 +64,53 @@ public class Summary {
     public func histogram<Scalar: BinaryInteger>(tensor: Tensor<Scalar>, tag: String) {
         histogram(array: tensor.scalars.map { Double($0) }, tag: tag)
     }
+    
+    /// Represents Image `Colorspace`
+    public enum Colorspace: Int32 {
+        case grayscale = 1
+        case grayscaleAlpha = 2
+        case rgb = 3
+        case rgba = 4
+        case digitalYUV = 5
+        case bgra = 6
 
-    public func image(array: [Float], tag: String) {
+    }
+    
+    /// Represents Image size for `Summary` image `Tensor`.
+    public struct ImageSize {
+        public let width: Int
+        public let height: Int
+        
+        public var points: Int {
+            return width * height
+        }
+        
+        public init(width: Int, height: Int) {
+            self.height = height
+            self.width = width
+        }
+        
+        public var longWidth: Int32 {
+            return Int32(width)
+        }
+        
+        public var longHeight: Int32 {
+            return Int32(height)
+        }
+    }
+    
+    public func image(array: [Float], colorspace: Colorspace, size: ImageSize, tag: String) {
         var value = valueTemplate
+        
+        var image = Tensorflow_Summary.Image()
+        image.colorspace = colorspace.rawValue
+        image.height = size.longHeight
+        image.width = size.longWidth
+        //image.encodedImageString
+        value.image = image
+        value.tag = tag
         values.append(value)
+        print(try! image.jsonString())
     }
     
     public func add<T : Numeric>(scalar: T, tag: String) {
@@ -108,7 +145,7 @@ public class Summary {
     public func add<Scalar>(tensor: Tensor<Scalar>, tag: String) {
         var value = valueTemplate
         value.tag = tag
-        //value.tensor = tensor.proto
+        value.tensor = tensor.proto
         add(value, tag: tag)
     }
     
