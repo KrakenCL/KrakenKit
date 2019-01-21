@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "LibPNG",
+        "repositoryURL": "https://github.com/KrakenCL/LibPNG.git",
+        "state": {
+          "branch": null,
+          "revision": "68bbd8e3ca46901d536b9f01f3075af0e24f9514",
+          "version": "0.0.2"
+        }
+      },
+      {
         "package": "SwiftProtobuf",
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {

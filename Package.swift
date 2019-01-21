@@ -10,7 +10,8 @@ let package = Package(
         .library(name: "KrakenKit", type: .static, targets: ["KrakenKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.2.0")
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.2.0"),
+        .package(url: "https://github.com/KrakenCL/LibPNG.git", from: "0.0.2")
     ],
     targets: [
         .target(
@@ -18,7 +19,7 @@ let package = Package(
             dependencies: ["SwiftProtobuf"]),
         .target(
             name: "KrakenKit",
-            dependencies: ["Proto"]),
+            dependencies: ["Proto", "LibPNG"]),
         .testTarget(
             name: "KrakenKitTests",
             dependencies: ["KrakenKit"]),
