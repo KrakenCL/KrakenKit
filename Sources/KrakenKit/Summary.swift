@@ -18,23 +18,62 @@
 import Foundation
 import Proto
 import TensorFlow
-import CTensorFlow
+import LibPNG
 
 public protocol TensorBoardRepresentable: TensorFlowScalar {}
 
+public enum SummaryError: Error {
+    case canNotComputeImageData
+}
 public class Summary {
     private var values = [Tensorflow_Summary.Value]()
     fileprivate let summaryQueue = DispatchQueue(label: "com.krakencl.krakenkit", qos: .default)
 
-    public init() {
+    /// Represents Image `Colorspace`
+    public enum Colorspace: Int32 {
+        case grayscale = 1
+        case grayscaleAlpha = 2
+        case rgb = 3
+        case rgba = 4
         
+        fileprivate var colorType: LibPNG.ColorType {
+            switch self {
+            case .grayscale:
+                return ColorType.greyscale
+            case .grayscaleAlpha:
+                return ColorType.greyscaleAlpha
+            case .rgb:
+                return ColorType.rgb
+            case .rgba:
+                return ColorType.rgba
+            }
+        }
     }
     
-    /*
-     image(Tensorflow_Summary.Image)
-     audio(Tensorflow_Summary.Audio)
-     tensor(Tensorflow_TensorProto)
-     */
+    /// Represents Image size for `Summary` image `Tensor`.
+    public struct ImageSize {
+        public let width: Int
+        public let height: Int
+        
+        public var points: Int {
+            return width * height
+        }
+        
+        public init(width: Int, height: Int) {
+            self.height = height
+            self.width = width
+        }
+        
+        public var longWidth: Int32 {
+            return Int32(width)
+        }
+        
+        public var longHeight: Int32 {
+            return Int32(height)
+        }
+    }
+    
+    public init() {}
     
     lazy var valueTemplate: Tensorflow_Summary.Value = {
         return Tensorflow_Summary.Value()
@@ -65,52 +104,43 @@ public class Summary {
         histogram(array: tensor.scalars.map { Double($0) }, tag: tag)
     }
     
-    /// Represents Image `Colorspace`
-    public enum Colorspace: Int32 {
-        case grayscale = 1
-        case grayscaleAlpha = 2
-        case rgb = 3
-        case rgba = 4
-        case digitalYUV = 5
-        case bgra = 6
-
+    public func image<T: BinaryInteger>(array: [T], colorspace: Colorspace = .grayscale, badColor: UInt8 = 0, size: ImageSize, tag: String) throws {
+        let pngImage = try Image(width: size.width,
+                              height: size.height,
+                              colorType: colorspace.colorType,
+                              bitDepth: 8,
+                              badColor: badColor,
+                              pixelValues: array)
+        guard let data = pngImage.data else {
+            throw SummaryError.canNotComputeImageData
+        }
+        image(data: data, colorspace: colorspace, size: size, tag: tag)
     }
     
-    /// Represents Image size for `Summary` image `Tensor`.
-    public struct ImageSize {
-        public let width: Int
-        public let height: Int
-        
-        public var points: Int {
-            return width * height
+    public func image<T: BinaryFloatingPoint>(array: [T], colorspace: Colorspace = .grayscale, badColor: UInt8 = 0, size: ImageSize, tag: String) throws {
+        let pngImage = try Image(width: size.width,
+                              height: size.height,
+                              colorType: colorspace.colorType,
+                              bitDepth: 8,
+                              badColor: badColor,
+                              pixelValues: array)
+        guard let data = pngImage.data else {
+            throw SummaryError.canNotComputeImageData
         }
-        
-        public init(width: Int, height: Int) {
-            self.height = height
-            self.width = width
-        }
-        
-        public var longWidth: Int32 {
-            return Int32(width)
-        }
-        
-        public var longHeight: Int32 {
-            return Int32(height)
-        }
+        image(data: data, colorspace: colorspace, size: size, tag: tag)
     }
     
-    public func image(array: [Float], colorspace: Colorspace, size: ImageSize, tag: String) {
+    public func image(data: Data, colorspace: Colorspace, size: ImageSize, tag: String) {
         var value = valueTemplate
         
         var image = Tensorflow_Summary.Image()
         image.colorspace = colorspace.rawValue
         image.height = size.longHeight
         image.width = size.longWidth
-        //image.encodedImageString
+        image.encodedImageString = data
         value.image = image
         value.tag = tag
         values.append(value)
-        print(try! image.jsonString())
     }
     
     public func add<T : Numeric>(scalar: T, tag: String) {

@@ -140,13 +140,31 @@ final class KrakenKitTests: XCTestCase {
         }
         
         let fileWriter = try! FileWriter(folder: fileWriterURL, identifier: "summary-image")
-        
-        let size = Summary.ImageSize(width: 25, height: 25)
-        summary.image(array: [], colorspace: .rgba, size: size, tag: "/image/0")
-        try! fileWriter.add(summary: summary, step: 0)
-
-       
-        
+        let size = Summary.ImageSize(width: 250, height: 250)
+    
+        for step in 0..<25 {
+            var array = [Float]()
+            
+            for row in 0..<size.width {
+                for column in 0..<size.width {
+                    var value: Float = 0/0 // NuN value, test
+                    if step % 2 == 0 {
+                        value = (0.5 - Float(row + column)) / Float(100.0)
+                        array.append(value)
+                    } else {
+                        if column == row {
+                            // leave NuN value
+                        }else {
+                            value = (Float(row + column)) / Float(100.0)
+                        }
+                        array.append(value)
+                    }
+                }
+            }
+            
+            try! summary.image(array: array, colorspace: .grayscale, size: size, tag: "/image/0")
+            try! fileWriter.add(summary: summary, step: step)
+        }
         checkFileWriterStatus(fileWriter:fileWriter)
     }
     
