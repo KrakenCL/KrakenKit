@@ -11,7 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.2.0"),
-        .package(url: "https://github.com/KrakenCL/LibPNG.git", from: "0.0.2")
+        .package(url: "https://github.com/KrakenCL/LibPNG.git", from: "0.0.3")
     ],
     targets: [
         .target(
