@@ -25,19 +25,7 @@ public protocol ProtoDataTypeRepresentable {
 extension ProtoDataTypeRepresentable {
     public var protoType: Tensorflow_DataType { return .dtInvalid }
 }
-/* Currently leads to compile abort
- Index: Duplicate USR! s:10TensorFlow0A0V9KrakenKitE9protoType5Proto015Tensorflow_DataF0Ovg
- !dbg attachment points at wrong subprogram for function
- !105 = distinct !DISubprogram(name: "proto.get", linkageName: "$s10TensorFlow0A0V9KrakenKitE5proto5Proto011Tensorflow_aF0Vvg", scope: !6, file: !5, line: 25, type: !106, isLocal: false, isDefinition: true, scopeLine: 25, isOptimized: false, unit: !0, retainedNodes: !2)
- void (%T5Proto017Tensorflow_TensorA0V*, %T10TensorFlow0A6HandleC*, %swift.type*, i8**)* @"$s10TensorFlow0A0V9KrakenKitE5proto5Proto011Tensorflow_aF0Vvg"
- store %T10TensorFlow0A6HandleC* %1, %T10TensorFlow0A6HandleC** %10, align 8, !dbg !98
- !98 = !DILocation(line: 0, scope: !93)
- !93 = distinct !DISubprogram(name: "protoType.get", linkageName: "$s10TensorFlow0A0V9KrakenKitE9protoType5Proto015Tensorflow_DataF0Ovg", scope: !6, file: !5, line: 20, type: !94, isLocal: false, isDefinition: true, scopeLine: 20, isOptimized: false, unit: !0, retainedNodes: !2)
- !93 = distinct !DISubprogram(name: "protoType.get", linkageName: "$s10TensorFlow0A0V9KrakenKitE9protoType5Proto015Tensorflow_DataF0Ovg", scope: !6, file: !5, line: 20, type: !94, isLocal: false, isDefinition: true, scopeLine: 20, isOptimized: false, unit: !0, retainedNodes: !2)
- <unknown>:0: error: fatal error encountered during compilation; please file a bug report with your project and the crash log
- <unknown>:0: note: Broken module found, compilation aborted!
 
- */
 extension Tensor {
     public var protoType: Tensorflow_DataType { return Tensorflow_DataType(swiftType: Scalar.self)  }
 }
@@ -59,7 +47,7 @@ extension Tensor {
         var tensorProto = Tensorflow_TensorProto()        
 
         tensorProto.tensorShape = shape.proto
-        tensorProto.dtype = Tensorflow_DataType(swiftType: Scalar.self)
+        tensorProto.dtype = self.protoType
         
         if let tensor = self as? Tensor<Double> {
             tensorProto.doubleVal = tensor.scalars
