@@ -8,13 +8,18 @@ KrakenKit is [swift](https://swift.org) package for tracking and logging your `T
 * Distributions
 * Histograms
 
+## HOW TO
+[There is How To] repository with examples of use KrakenKit. Please, review it. 
+
 ## Download Swift for TensorFlow latest toolchain.
 There is [installation guide](https://github.com/tensorflow/swift/blob/master/Installation.md)
+
 
 ## Setup your environment
 ```
 $ export PATH="${PATH}":/Library/Developer/Toolchains/swift-latest/usr/bin/
 ```
+
 
 ## Add `KrakenKit` to your `Package.swift` file.
 ```
@@ -22,6 +27,23 @@ dependencies: [
 .package(url: "https://github.com/KrakenCL/KrakenKit.git", from: "0.0.1")
 ],
 ```
+
+
+## Install PNG library
+`KrakenKit` using libpng to make images. In that case you have to install it on your OS.
+
+### Install libpng and pkg-conf
+
+On MacOS using brew:
+```
+$ brew install pkgconfig libpng
+```
+
+on Linux apt:
+```
+$ sudo apt install pkgconfig libpng
+```
+
 
 ## Add `FileWriter` and `Summary` to your project.
 ```
@@ -46,20 +68,24 @@ try! fileWriter.add(summary: summary, step: epoch)
 
 ```
 
+
 ## Select example
 ```
 $ cd TensorBoardMNIST
 ```
+
 
 ## Build package 
 ```
 $ /Library/Developer/Toolchains/swift-latest/usr/bin/swift build
 ```
 
+
 ## Run package
 ```
 $ /Library/Developer/Toolchains/swift-latest/usr/bin/swift run TensorBoardMNIST -r ./Resources/ -l /tmp/mnist/
 ```
+
 
 ## Run TensorBoard
 ```
@@ -69,6 +95,7 @@ $ tensorboard --logdir=/tmp/mnist/
 ![scalars](https://raw.githubusercontent.com/KrakenCL/HOWTO/master/docs/images.png)
 ![scalars](https://raw.githubusercontent.com/KrakenCL/HOWTO/master/docs/distributions.png)
 ![scalars](https://raw.githubusercontent.com/KrakenCL/HOWTO/master/docs/histograms.png)
+
 
 ## Result output
 ```
@@ -97,26 +124,12 @@ Constructing data tensors.
 
 ```
 
+
 ## Generate Xcode porject file 
 ```
 $ /Library/Developer/Toolchains/swift-latest/usr/bin/swift package generate-xcodeproj
 ```
 Setup project 
-Check Toolchain [Installation](https://github.com/tensorflow/swift/blob/master/Installation.md) instruction. 
-1) Set Xcode->Toolchains,  select TensorFlow Swift  Toolchains.
-2) File-> 'Project Settings...'-> Build system -> select 'Legay Build System'.
-
-
-## Build and launch tests.
-```
-$ swift package clean && /Library/Developer/Toolchains/swift-latest/usr/bin/swift test -Xlinker -L/Library/Developer/Toolchains/swift-latest/usr/lib/swift/macosx/ -Xlinker -ltensorflow
-```
-
-## Generate Xcode project file 
-```
-$ /Library/Developer/Toolchains/swift-latest/usr/bin/swift package -Xlinker -L/Library/Developer/Toolchains/swift-latest/usr/lib/swift/macosx/ -Xlinker -ltensorflow -Xlinker -rpath -Xlinker /Library/Developer/Toolchains/swift-latest/usr/lib/swift/macosx/ generate-xcodeproj
-```
-## Setup XCode project 
 Check Toolchain [Installation](https://github.com/tensorflow/swift/blob/master/Installation.md) instruction. 
 1) Set Xcode->Toolchains,  select TensorFlow Swift  Toolchains.
 2) File-> 'Project Settings...'-> Build system -> select 'Legay Build System'.
